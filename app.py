@@ -33,7 +33,7 @@ def home():
     return """<html>
     <h1>Hawaii Climate App (Flask API)</h1>
     <hr>
-    <img src='Images/surfs-up.png' alt='Surf's Up'>
+    <img src='Images/surfs-up.png' alt="Surf's Up">
     <br><br>
     <p>Precipitation Analysis:</p>
     <ul>
@@ -49,11 +49,11 @@ def home():
     </ul>
     <p>Start Day Analysis:</p>
     <ul>
-    <li><a href="/api/v1.0/<start>">/api/v1.0/<start></a></li>
+    <li><a href="/api/v1.0/20160823">/api/v1.0/20160823</a></li>
     </ul>
     <p>Start & End Day Analysis:</p>
     <ul>
-    <li><a href="/api/v1.0/<start>/<end>">/api/v1.0/<start>/<end></a></li>
+    <li><a href="/api/v1.0/20160823/20170823">/api/v1.0/20160823/20170823</a></li>
     </ul>
     </html>
     """
@@ -63,7 +63,7 @@ def home():
 def precipitation():
     # Convert query results to dictionary using 'date' as the key and 'prcp' as the value
     # Calculate the date one year ago from the last data point in the database
-    one_year_ago = dt.date(2017, 89, 23) - dt.timedelta(days=365)
+    one_year_ago = dt.date(2017,8,23) - dt.timedelta(days=365)
 
     # Query to retrieve last 12 months of precipation data selecting only the 'date' and 'prcp' values
     prcp_data = session.query(measurement.date, measurement.prcp).\
@@ -78,7 +78,7 @@ def precipitation():
 
 # Station Route
 @app.route('/api/v1.0/stations')
-def stations():
+def station_list():
     # Return a list of stations from the dataset
     active_stations = session.query(measurement.station, func.count(measurement.station)).\
         group_by(measurement.station).\
@@ -94,10 +94,10 @@ def stations():
 @app.route('/api/v1.0/tobs')
 def tobs():
     # Calculate the date one year ago from the last data point in the database
-    one_year_ago = dt.date(2017, 89, 23) - dt.timedelta(days=365)
+    one_year_ago = dt.date(2017,8,23) - dt.timedelta(days=365)
     
     # Query for dates and temperature observations from a year from the last data point
-    tobs_data = session.query(measurement.tobs).\
+    tobs_data = session.query(measurement.date, measurement.tobs).\
         filter(measurement.date >= one_year_ago).\
         filter(measurement.station == 'USC00519281').\
         order_by(measurement.date).all()
@@ -107,6 +107,43 @@ def tobs():
 
     # JSON list of temperature observations for the previous year
     return jsonify(tobs_list)
+ 
+# Start Day Route
+@app.route('/api/v1.0/20160823')
+def start_day():
+    start = dt.date(2017,8,23) - dt.timedelta(days=365)
+
+    start_day = session.query(measurement.date, func.min(measurement.tobs), func.avg(measurement.tobs), func.max(measurement.tobs)).\
+        filter(measurement.date >= start).\
+        group_by(measurement.date).all()
+
+    # Convert to list
+    start_list = list(start_day)
+
+    # Return JSON list of TMIN, TAVG, and TMAX for given start date
+    return jsonify(start_list)
+    
+# Start-End Day Route
+@app.route('/api/v1.0/20160823/20170823')
+def start_end_day():
+    end = dt.date(2017,8,23)
+    start = dt.date(2016,8,23)
+    
+    start_end_day = session.query(measurement.date, func.min(measurement.tobs), func.avg(measurement.tobs), func.max(measurement.tobs)).\
+        filter(measurement.date >= start).\
+        filter(measurement.date <= end).\
+        group_by(measurement.date).all()
+    
+    # Convert to list
+    start_end_list = list(start_end_day)
+
+    # Return JSON list of TMIN, TAVG, AND TMAX for a given start-end range
+    return jsonify(start_end_list)
+
+
+# Define Main Behavior
+if __name__ == '__main__':
+    app.run(debug=True)
 
 
 
