@@ -29,7 +29,7 @@ app = Flask(__name__)
 
 # Home 
 @app.route('/')
-def welcome():
+def home():
     return """<html>
     <h1>Hawaii Climate App (Flask API)</h1>
     <hr>
@@ -57,4 +57,21 @@ def welcome():
     </ul>
     </html>
     """
+
+# Precipitation
+@app.route('/api/v1.0/precipitation')
+def precipitation():
+    # Convert query results to dictionary using 'date' as the key and 'prcp' as the value
+    # Calculate the date one year ago from the last data point in the database
+    one_year_ago = dt.date(2017, 89, 23) - dt.timedelta(days=365)
+
+    # Query to retrieve last 12 months of precipation data selecting only the 'date' and 'prcp' values
+    prcp_data = session.query(measurement.date, measurement.prcp).\
+        filter(measurement.date >= one_year_ago).\
+        order_by(measurement.date).all()
     
+    # Convert list of tuples into a dictionary
+    prcp_dict = dict(prcp_data)
+
+    # Return JSON representation of dictionary
+    return jsonify(prcp_dict)
