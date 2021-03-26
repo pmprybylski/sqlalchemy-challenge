@@ -75,3 +75,41 @@ def precipitation():
 
     # Return JSON representation of dictionary
     return jsonify(prcp_dict)
+
+# Station Route
+@app.route('/api/v1.0/stations')
+def stations():
+    # Return a list of stations from the dataset
+    active_stations = session.query(measurement.station, func.count(measurement.station)).\
+        group_by(measurement.station).\
+        order_by(func.count(measurement.station).desc()).all()
+    
+    # Convert list of tuples into a regular list
+    stations_list = list(active_stations)
+    
+    # Reurn JSON list of stations
+    return jsonify(stations_list)
+
+# TOBS Route
+@app.route('/api/v1.0/tobs')
+def tobs():
+    # Calculate the date one year ago from the last data point in the database
+    one_year_ago = dt.date(2017, 89, 23) - dt.timedelta(days=365)
+    
+    # Query for dates and temperature observations from a year from the last data point
+    tobs_data = session.query(measurement.tobs).\
+        filter(measurement.date >= one_year_ago).\
+        filter(measurement.station == 'USC00519281').\
+        order_by(measurement.date).all()
+
+    # Convert to list
+    tobs_list = list(tobs_data)
+
+    # JSON list of temperature observations for the previous year
+    return jsonify(tobs_list)
+
+
+
+
+
+
